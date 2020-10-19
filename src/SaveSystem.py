@@ -8,6 +8,7 @@ SAVE_CROP = 1
 def save(img, type):
     root_dir = os.path.dirname(os.path.abspath(__file__))
     data_path = root_dir
+
     if type == SAVE_VIDEOCAP:
         if len(img.shape) == 3:
             data_path = os.path.join(root_dir, "ressources/raw-captures/color")
