@@ -27,7 +27,6 @@ def image_cropper(im):
 def live_feed_capture():
     capture = cv.VideoCapture(0)
     frame_name = "CameraFeed"
-    kernels = [3,5,7,9,11,13,15,17,19,21,23,25,27,29,31,33,35,37,39,41,43,45,47,49]
     last_cap = time()
     ret, frame = capture.read()
     cv.imshow(frame_name, frame)
@@ -62,7 +61,7 @@ def live_feed_capture():
                 last_cap = time()
         if key == ord('g'):
             if frame_time - last_cap > 1:
-                ss.save(cv.cvtColor(frame,cv.COLOR_BGR2GRAY), ss.SAVE_VIDEOCAP)
+                ss.save(cv.cvtColor(frame, cv.COLOR_BGR2GRAY), ss.SAVE_VIDEOCAP)
                 last_cap = time()
     capture.release()
     cv.destroyAllWindows()
