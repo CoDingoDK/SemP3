@@ -12,8 +12,11 @@ def segmentation(image, frame_name):
             largest_area = row[4]
             index_largest_area = i
     x, y, width, height, _ = stats[index_largest_area]
+    mask = np.zeros(res.shape[:2], np.uint8)
+    mask[y:y + height, x:x + width] = 255
+    res = cv.bitwise_and(image, image, mask=mask)
     # res = cv.bitwise_and(image, res[x:x+width, y:y+height])
     #
     res = cv.rectangle(res, (x, y), (x+width, y+height), 255)
 
-    return res
+    return res, stats[index_largest_area]
