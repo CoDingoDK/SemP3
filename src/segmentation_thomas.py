@@ -45,6 +45,8 @@ def segmentation(image, frame_name):
     for i in range(len(contours)):
         # creating convex hull object for each contour
         hull.append(cv.convexHull(contours[i], False, ))
+        new_c = max(hull, key=cv.contourArea)
+        Minor = cv.moments(new_c)
     for i in range(len(contours)):
         color_contours = (0, 255, 0)
         color = (0, 0, 255)
@@ -64,19 +66,59 @@ def segmentation(image, frame_name):
         ybot = yc + math.sin(math.radians(angle + 180)) * major
 
         cv.line(labels_img, (int(xtop), int(ytop)), (int(xbot), int(ybot)), (0, 0, 255), 3)
+        if rect is not None:
+            (xc2, yc2), (d12, d22), angle2 = rect
+            minor = min(d12, d22) / 2
+            if angle > 90:
+                angle2 = angle2 - 180
+            else:
+                angle2 = angle2 + 180
+            xtop2 = xc2 + math.cos(math.radians(angle2)) * minor
+            ytop2 = yc2 + math.sin(math.radians(angle2)) * minor
+            xbot2 = xc2 + math.cos(math.radians(angle2 + 180)) * minor
+            ybot2 = yc2 + math.sin(math.radians(angle2 + 180)) * minor
+            cv.line(labels_img, (int(xtop2), int(ytop2)), (int(xbot2), int(ybot2)), (0, 0, 255), 3)
 
-        cX = int(M["m10"] / M["m00"])
-        cY = int(M["m01"] / M["m00"])
-        cv.circle(labels_img, (cX, cY), 5, (255, 0, 0), -1)
-        cv.rectangle(labels_img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-        kpCnt = len(contours[0])
-        x_list = list(point[0][0] for point in c)
-        y_list = list(point[0][1] for point in c)
+            diff_x_major = xtop - xbot
+            diff_y_major = ytop - ybot
 
-        avg_c_x = int(np.ceil(sum(x_list) / len(x_list)))
-        avg_c_y = int(np.ceil(sum(y_list) / len(y_list)))
+            diff_x_minor = xtop2 - xbot2
+            diff_y_minor = ytop2 - ybot2
 
-        cv.circle(labels_img, ((avg_c_x), (avg_c_y)), 1, (255, 0, 255), 3)
-        cv.line(labels_img, (cX,cY),(avg_c_x, avg_c_y), (255, 0, 255))
-        cf.point_to_point_angle((cX,cY), (avg_c_x, avg_c_y))
+            euq_major = cv.sqrt(diff_x_major * diff_x_major + diff_y_major * diff_y_major)
+            euq_minor = cv.sqrt(diff_x_minor * diff_x_minor + diff_y_minor * diff_y_minor)
+
+            cX = int(M["m10"] / M["m00"])
+            cY = int(M["m01"] / M["m00"])
+
+            mass_x = int(Minor["m10"] / Minor["m00"])
+            mass_y = int(Minor["m01"] / Minor["m00"])
+
+            # center of mass for contours
+            cv.circle(labels_img, (cX, cY), 5, (255, 0, 0), -1)
+            # center of mass for convex hull
+            cv.circle(labels_img, (mass_x, mass_y), 5, (50, 125, 200), -1)
+            cv.circle(labels_img, (cX, cY), 5, (255, 0, 0), -1)
+            cv.rectangle(labels_img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            kpCnt = len(contours[0])
+            x_list = list(point[0][0] for point in c)
+            y_list = list(point[0][1] for point in c)
+
+            avg_c_x = int(np.ceil(sum(x_list) / len(x_list)))
+            avg_c_y = int(np.ceil(sum(y_list) / len(y_list)))
+
+            center_coord = (int(mass_x), int(mass_y))
+            ax_len = (euq_major[0]/2, euq_minor[0]/2)
+            start_ang = angle
+
+            # cv.ellipse(labels_img, center_coord, ax_len, start_ang, 0, 360, (255, 0, 0), 5)
+            cv.circle(labels_img, (cX, cY), int(ax_len[0]), (0, 0, 255))
+
+
+
+            cv.circle(labels_img, (avg_c_x, avg_c_y), 1, (255, 0, 255), 3)
+            cv.line(labels_img, (cX, cY), (avg_c_x, avg_c_y), (255, 0, 255))
+            cf.point_to_point_angle((cX, cY), (avg_c_x, avg_c_y))
+
     return labels_img
+
