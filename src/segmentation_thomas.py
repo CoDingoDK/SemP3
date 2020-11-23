@@ -122,3 +122,10 @@ def segmentation(image, frame_name):
 
     return labels_img
 
+def delete_if_inside(radius, origin, pixel):
+    diff_x = pixel[0] - origin[0]
+    diff_y = pixel[1] - origin[1]
+    distance_from_origin = cv.sqrt(diff_x**2 + diff_y**2)[0]
+    if distance_from_origin <= radius:
+        return True
+    return False
