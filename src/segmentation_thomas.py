@@ -36,10 +36,10 @@ def segmentation(image, frame_name):
         top = tuple(c[c[:, :, 1].argmin()][0])
         bottom = tuple(c[c[:, :, 1].argmax()][0])
 
-        cv.circle(labels_img, left, 8, (0, 50, 255), -1)
-        cv.circle(labels_img, right, 8, (0, 255, 255), -1)
-        cv.circle(labels_img, top, 8, (255, 50, 0), -1)
-        cv.circle(labels_img, bottom, 8, (255, 255, 0), -1)
+        # cv.circle(labels_img, left, 8, (0, 50, 255), -1)
+        # cv.circle(labels_img, right, 8, (0, 255, 255), -1)
+        # cv.circle(labels_img, top, 8, (255, 50, 0), -1)
+        # cv.circle(labels_img, bottom, 8, (255, 255, 0), -1)
 
     # calculate points for each contour
     for i in range(len(contours)):
@@ -50,8 +50,8 @@ def segmentation(image, frame_name):
     for i in range(len(contours)):
         color_contours = (0, 255, 0)
         color = (0, 0, 255)
-        cv.drawContours(labels_img, contours, i, color_contours, 1, 8, hierarchy)
-        cv.drawContours(labels_img, hull, i, color, 1, 8)
+        # cv.drawContours(labels_img, contours, i, color_contours, 1, 8, hierarchy)
+        # cv.drawContours(labels_img, hull, i, color, 1, 8)
     if rect is not None:
         (xc, yc), (d1, d2), angle = rect
         major = max(d1, d2) / 2
@@ -65,7 +65,7 @@ def segmentation(image, frame_name):
         xbot = xc + math.cos(math.radians(angle + 180)) * major
         ybot = yc + math.sin(math.radians(angle + 180)) * major
 
-        cv.line(labels_img, (int(xtop), int(ytop)), (int(xbot), int(ybot)), (0, 0, 255), 3)
+        # cv.line(labels_img, (int(xtop), int(ytop)), (int(xbot), int(ybot)), (0, 0, 255), 3)
         if rect is not None:
             (xc2, yc2), (d12, d22), angle2 = rect
             minor = min(d12, d22) / 2
@@ -77,7 +77,7 @@ def segmentation(image, frame_name):
             ytop2 = yc2 + math.sin(math.radians(angle2)) * minor
             xbot2 = xc2 + math.cos(math.radians(angle2 + 180)) * minor
             ybot2 = yc2 + math.sin(math.radians(angle2 + 180)) * minor
-            cv.line(labels_img, (int(xtop2), int(ytop2)), (int(xbot2), int(ybot2)), (0, 0, 255), 3)
+            # cv.line(labels_img, (int(xtop2), int(ytop2)), (int(xbot2), int(ybot2)), (0, 0, 255), 3)
 
             diff_x_major = xtop - xbot
             diff_y_major = ytop - ybot
@@ -95,11 +95,11 @@ def segmentation(image, frame_name):
             mass_y = int(Minor["m01"] / Minor["m00"])
 
             # center of mass for contours
-            cv.circle(labels_img, (cX, cY), 5, (255, 0, 0), -1)
+            # cv.circle(labels_img, (cX, cY), 5, (255, 0, 0), -1)
             # center of mass for convex hull
-            cv.circle(labels_img, (mass_x, mass_y), 5, (50, 125, 200), -1)
-            cv.circle(labels_img, (cX, cY), 5, (255, 0, 0), -1)
-            cv.rectangle(labels_img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            # cv.circle(labels_img, (mass_x, mass_y), 5, (50, 125, 200), -1)
+            # cv.circle(labels_img, (cX, cY), 5, (255, 0, 0), -1)
+            # cv.rectangle(labels_img, (x, y), (x + w, y + h), (0, 255, 0), 2)
             kpCnt = len(contours[0])
             x_list = list(point[0][0] for point in c)
             y_list = list(point[0][1] for point in c)
@@ -113,18 +113,26 @@ def segmentation(image, frame_name):
 
             # cv.ellipse(labels_img, center_coord, ax_len, start_ang, 0, 360, (255, 0, 0), 5)
             cv.circle(labels_img, (cX, cY), int(ax_len[0]), (0, 0, 255))
-
-
-
-            cv.circle(labels_img, (avg_c_x, avg_c_y), 1, (255, 0, 255), 3)
-            cv.line(labels_img, (cX, cY), (avg_c_x, avg_c_y), (255, 0, 255))
+            temp = np.copy(labels_img)
+            for i, row in enumerate(temp, x):
+                if i == x + w:
+                    break
+                for j, pixel in enumerate(row, y):
+                    if j == y + h:
+                        break
+                    if_delete = delete_if_inside(int(ax_len[0]), (cX, cY), (i, j))
+                    if if_delete:
+                        temp[j,i] = 0
+            cv.imshow("temp", temp)
+            # cv.circle(labels_img, (avg_c_x, avg_c_y), 1, (255, 0, 255), 3)
+            # cv.line(labels_img, (cX, cY), (avg_c_x, avg_c_y), (255, 0, 255))
             cf.point_to_point_angle((cX, cY), (avg_c_x, avg_c_y))
-
+            labels_img = temp
     return labels_img
 
 def delete_if_inside(radius, origin, pixel):
-    diff_x = pixel[0] - origin[0]
-    diff_y = pixel[1] - origin[1]
+    diff_x = origin[0] - pixel[0]
+    diff_y = origin[1] - pixel[1]
     distance_from_origin = cv.sqrt(diff_x**2 + diff_y**2)[0]
     if distance_from_origin <= radius:
         return True
