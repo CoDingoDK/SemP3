@@ -1,7 +1,7 @@
 import cv2 as cv
 import numpy as np
 import math
-
+import classification as cf
 
 def segmentation(image, frame_name):
     hull = []
@@ -69,5 +69,14 @@ def segmentation(image, frame_name):
         cY = int(M["m01"] / M["m00"])
         cv.circle(labels_img, (cX, cY), 5, (255, 0, 0), -1)
         cv.rectangle(labels_img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        kpCnt = len(contours[0])
+        x_list = list(point[0][0] for point in c)
+        y_list = list(point[0][1] for point in c)
 
+        avg_c_x = int(np.ceil(sum(x_list) / len(x_list)))
+        avg_c_y = int(np.ceil(sum(y_list) / len(y_list)))
+
+        cv.circle(labels_img, ((avg_c_x), (avg_c_y)), 1, (255, 0, 255), 3)
+        cv.line(labels_img, (cX,cY),(avg_c_x, avg_c_y), (255, 0, 255))
+        cf.point_to_point_angle((cX,cY), (avg_c_x, avg_c_y))
     return labels_img
