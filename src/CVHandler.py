@@ -33,7 +33,7 @@ def live_feed_capture():
     cv.imshow(frame_name, frame)
 
     # Pre-processing Trackers
-    cv.createTrackbar("hue lower", frame_name, 28, 360, lambda x: x)
+    cv.createTrackbar("hue lower", frame_name, 22, 360, lambda x: x)
     cv.createTrackbar("hue upper", frame_name, 42, 360, lambda x: x)
 
     cv.createTrackbar("sat lower", frame_name, 27, 255, lambda x: x)
