@@ -107,12 +107,13 @@ def segmentation(image, frame_name):
             avg_c_x = int(np.ceil(sum(x_list) / len(x_list)))
             avg_c_y = int(np.ceil(sum(y_list) / len(y_list)))
 
+
+
             center_coord = (int(mass_x), int(mass_y))
             ax_len = (euq_major[0]/2, euq_minor[0]/2)
             start_ang = angle
-
             # cv.ellipse(labels_img, center_coord, ax_len, start_ang, 0, 360, (255, 0, 0), 5)
-            cv.circle(labels_img, (cX, cY), int(ax_len[0]), (0, 0, 255))
+            cv.circle(labels_img, (avg_c_x, avg_c_y), int(ax_len[0]), (0, 0, 255))
             temp = np.copy(labels_img)
             for i, row in enumerate(temp, x):
                 if i == x + w:
@@ -120,14 +121,15 @@ def segmentation(image, frame_name):
                 for j, pixel in enumerate(row, y):
                     if j == y + h:
                         break
-                    if_delete = delete_if_inside(int(ax_len[0]), (cX, cY), (i, j))
+                    if_delete = delete_if_inside(int(ax_len[0]), (avg_c_x, avg_c_y), (i, j))
                     if if_delete:
                         temp[j,i] = 0
             cv.imshow("temp", temp)
-            # cv.circle(labels_img, (avg_c_x, avg_c_y), 1, (255, 0, 255), 3)
+            cv.circle(labels_img, (avg_c_x, avg_c_y), 1, (255, 0, 255), 3)
             # cv.line(labels_img, (cX, cY), (avg_c_x, avg_c_y), (255, 0, 255))
             cf.point_to_point_angle((cX, cY), (avg_c_x, avg_c_y))
-            labels_img = temp
+            # labels_img = temp
+
     return labels_img
 
 def delete_if_inside(radius, origin, pixel):
