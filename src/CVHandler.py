@@ -33,10 +33,10 @@ def live_feed_capture():
     cv.imshow(frame_name, frame)
 
     # Pre-processing Trackers
-    cv.createTrackbar("hue lower", frame_name, 22, 360, lambda x: x)
-    cv.createTrackbar("hue upper", frame_name, 42, 360, lambda x: x)
+    cv.createTrackbar("hue lower", frame_name, 30, 360, lambda x: x)
+    cv.createTrackbar("hue upper", frame_name, 75, 360, lambda x: x)
 
-    cv.createTrackbar("sat lower", frame_name, 27, 255, lambda x: x)
+    cv.createTrackbar("sat lower", frame_name, 55, 255, lambda x: x)
     cv.createTrackbar("sat upper", frame_name, 255, 255, lambda x: x)
 
     cv.createTrackbar("val lower", frame_name, 0, 255, lambda x: x)
@@ -47,11 +47,14 @@ def live_feed_capture():
     while cv.getWindowProperty(frame_name, cv.WND_PROP_VISIBLE) != 0:
         frame_time = time()
         ret, frame = capture.read()
-        frame_masked = pp.pre_process(frame, frame_name)
-        segmented_image, pos = seg.segmentation(frame_masked, frame_name)
+        frame_masked = pp.hsv_threshhold(frame, frame_name)
+        segmented_image, pos = seg.segmentation(frame_masked, frame_name,200)
         frame_roi = pp.roi_hsv_thresh(frame, frame_name, pos)
-        segmented_image = tseg.segmentation(frame_roi, frame_name)
-        cv.imshow(frame_name, segmented_image)
+        hand, hand_stats = seg.segmentation(frame_roi, frame_name,200)
+        segmented_image, hand = tseg.segmentation(hand, frame_name, 100)
+        classifier
+        if segmented_image is not None:
+            cv.imshow(frame_name, segmented_image)
         key = cv.waitKey(1) & 0xFF
         if  key == ord('q'):
             break
@@ -65,5 +68,4 @@ def live_feed_capture():
                 last_cap = time()
     capture.release()
     cv.destroyAllWindows()
-
 

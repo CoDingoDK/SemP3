@@ -2,7 +2,7 @@ import cv2 as cv
 import numpy as np
 
 
-def pre_process(image, frame_name):
+def hsv_threshhold(image, frame_name):
     # hue_low, hue_up, sat_low, sat_up, val_low, val_up = 40, 105, 40, 255, 0, 255
     hue_low = cv.getTrackbarPos("hue lower", frame_name)
     hue_up = cv.getTrackbarPos("hue upper", frame_name)
