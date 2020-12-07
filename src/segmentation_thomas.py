@@ -127,7 +127,7 @@ def segmentation(image, frame_name):
             cv.imshow("temp", temp)
             cv.circle(labels_img, (avg_c_x, avg_c_y), 1, (255, 0, 255), 3)
             # cv.line(labels_img, (cX, cY), (avg_c_x, avg_c_y), (255, 0, 255))
-            # cf.point_to_point_angle((cX, cY), (avg_c_x, avg_c_y))
+            cf.point_to_point_angle((cX, cY), (avg_c_x, avg_c_y))
             # labels_img = temp
 
             img = thresh[y:y + h, x:x + w]
@@ -139,13 +139,11 @@ def segmentation(image, frame_name):
                 img_ratio = w / h
 
             if 1.2 >= img_ratio < 1.4:
-                cf.point_to_point_angle((cX, cY), (avg_c_x, avg_c_y))
+                print('\r' + "Thumb", end='')
             elif 1.4 <= img_ratio <= 1.9:
                 print('\r' + "O-Sign", end='')
             elif img_ratio > 1.9:
                 print('\r' + "Flat hand", end='')
-            elif img_ratio < 1.2:
-                print('\r' + "No sign", end='')
 
     return labels_img
 
