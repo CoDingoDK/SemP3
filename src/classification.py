@@ -1,22 +1,18 @@
 import time
 from collections import deque
-
-# global empty queue is initialized upon library load.
-from statistics import mode
-
-import numpy as np
+from hand import LEFT,RIGHT,UP,DOWN,PLAY_PAUSE
 
 hands_maxlen = 10
-min_sign_consistency = 7
 hands = deque(maxlen=hands_maxlen)
 time_since_last_action = time.time()
-repeated_action = None
-
+last_sign = None
 
 # hands are appended to a queue with a maximum length of 10, this means it takes at most 10 frames
 # before the algorithm is primed for an appropriate response, but also makes it easier to ensure that the sign is valid.
 def classification(hand):
-    global hands, time_since_last_action
+    global hands, hands_maxlen, time_since_last_action, last_sign
+    if hand is not None:
+        hand.calc_sign()
     hands.append(hand)
     if len(hands) < hands_maxlen:
         return None
@@ -27,7 +23,17 @@ def classification(hand):
 
     signs = [(h.get_sign() if h is not None else h) for h in hands]
     estimated_sign = estimate_sign_consistency(signs)
-    return estimated_sign
+    if last_sign != estimated_sign:
+        if time.time()-time_since_last_action > 1.7:
+            time_since_last_action = time.time()
+            last_sign = estimated_sign
+            return estimated_sign
+    elif time.time()-time_since_last_action > 1:
+        time_since_last_action = time.time()
+        last_sign = estimated_sign
+        return estimated_sign
+    else:
+        return None
 
 
 def estimate_sign_consistency(list):
@@ -45,8 +51,7 @@ def estimate_sign_consistency(list):
         list_of_indices = [i for i, x in enumerate(list) if x == sign]
         unique_sign_avg_index.append(sum(list_of_indices)/len(list_of_indices))
     index_most_reccuring = max(range(len(sign_count)), key=sign_count.__getitem__)
-    print(f'The most reccuring value is {unique_signs[index_most_reccuring]}')
-    if sign_count[index_most_reccuring] >= min_sign_consistency:
+    if sign_count[index_most_reccuring] >= 4:
         return unique_signs[index_most_reccuring]
     else:
         return None

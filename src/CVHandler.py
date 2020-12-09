@@ -4,6 +4,8 @@ from src import SaveSystem as ss
 from src import pre_processing as pp
 from src import segmentation as seg
 from src import segmentation_thomas as tseg
+from classification import *
+from vlc_controllenator import VLC_controller
 
 mouse_x, mouse_y = 0, 0
 
@@ -25,18 +27,19 @@ def image_cropper(im):
     cv.waitKey()
     print("crop saved")
 
-def live_feed_capture():
+
+def live_feed_capture(mediaplayer: VLC_controller):
     capture = cv.VideoCapture(0)
     frame_name = "CameraFeed"
-    last_cap = time()
+    last_cap = time.time()
     ret, frame = capture.read()
     cv.imshow(frame_name, frame)
 
     # Pre-processing Trackers
     cv.createTrackbar("hue lower", frame_name, 30, 360, lambda x: x)
-    cv.createTrackbar("hue upper", frame_name, 75, 360, lambda x: x)
+    cv.createTrackbar("hue upper", frame_name, 95, 360, lambda x: x)
 
-    cv.createTrackbar("sat lower", frame_name, 55, 255, lambda x: x)
+    cv.createTrackbar("sat lower", frame_name, 25, 255, lambda x: x)
     cv.createTrackbar("sat upper", frame_name, 255, 255, lambda x: x)
 
     cv.createTrackbar("val lower", frame_name, 0, 255, lambda x: x)
@@ -45,14 +48,16 @@ def live_feed_capture():
     # cv.createTrackbar("type variable info here", frame_name, 1, 10, lambda x: x)
 
     while cv.getWindowProperty(frame_name, cv.WND_PROP_VISIBLE) != 0:
-        frame_time = time()
+        frame_time = time.time()
         ret, frame = capture.read()
         frame_masked = pp.hsv_threshhold(frame, frame_name)
-        segmented_image, pos = seg.segmentation(frame_masked, frame_name,200)
+        segmented_image, pos = seg.segmentation(frame_masked, frame_name,50)
         frame_roi = pp.roi_hsv_thresh(frame, frame_name, pos)
-        hand, hand_stats = seg.segmentation(frame_roi, frame_name,200)
-        segmented_image, hand = tseg.segmentation(hand, frame_name, 100)
-        classifier
+        hand, hand_stats = seg.segmentation(frame_roi, frame_name,50)
+        segmented_image, hand = tseg.segmentation(hand, frame_name, 50)
+        estimated_sign = classification(hand)
+
+        mediaplayer.perform_action(estimated_sign)
         if segmented_image is not None:
             cv.imshow(frame_name, segmented_image)
         key = cv.waitKey(1) & 0xFF

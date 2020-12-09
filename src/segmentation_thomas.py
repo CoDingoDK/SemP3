@@ -20,6 +20,7 @@ def segmentation(image, frame_name, min_size):
     component_overlay_image[label_hue == 0] = 0
     contours, hierarchy = cv.findContours(thresh, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
     if len(contours) != 1:
+        None
         cv.drawContours(component_overlay_image, contours, -1, (255), 1)
         cv.imshow("contour", component_overlay_image)
     if contours:
@@ -100,23 +101,18 @@ def segmentation(image, frame_name, min_size):
                 longest_extremity_relative_to_hand_com = world_to_hand_orientation(thumb_assumption_point, wrist_assumption_point)
                 if abs(longest_extremity_relative_to_hand_com) > 135:
                     if 2 <= len(point_list) <= 3:
-                        fingers_only = [f for f in point_list if abs(world_to_hand_orientation(f, wrist_assumption_point)) > 135]
+                        fingers_only = [Extremity(f, True) for f in point_list if abs(world_to_hand_orientation(f, wrist_assumption_point)) > 135]
                         hand.fingers = fingers_only
                         fingers_removed = [f for f in point_list if 90 <= world_to_hand_orientation(f, wrist_assumption_point) <= 135]
                         if fingers_removed:
                             thumb = fingers_removed[0]
                             if 135 >= abs(world_to_hand_orientation(thumb, wrist_assumption_point)) >= 75:
-                                print("pause/start")
-                                hand.sign = PLAY_PAUSE
-                    # Longest extremity is not a thumb, found opposite from the hand in hand-relative orientation
-                    # Estimate this pose as the
-
-                elif longest_extremity_relative_to_hand_com <= 0:
-                    hand.sign = RIGHT
-                    print("right")
-                elif longest_extremity_relative_to_hand_com >= 0:
-                    hand.sign = LEFT
-                    print("left")
+                                hand.thumb = Extremity(thumb, True)
+                                hand.wrist = Extremity(wrist_assumption_point, True)
+                elif 135 >= abs(longest_extremity_relative_to_hand_com) > 75:
+                    # Assume thumb
+                    hand.thumb = Extremity(thumb_assumption_point, True)
+                    hand.wrist = Extremity(wrist_assumption_point, True)
             else:
                 return None, None
             cv.imshow("fingers", points)
