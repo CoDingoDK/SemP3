@@ -15,101 +15,67 @@ def classify_hand(image, frame_name, min_size, hand):
     else:
         label_hue = np.uint8(255 * component_image / np.max(1))
     blank_ch = 255 * np.ones_like(label_hue)
-    component_overlay_image = cv.merge([blank_ch])
+    component_overlay_image = blank_ch
     component_overlay_image[label_hue == 0] = 0
-    contours, hierarchy = cv.findContours(thresh, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-    if contours:
-        largest_countour = max(contours, key=cv.contourArea)
+    _, labels, stats, centroids = cv.connectedComponentsWithStats(thresh, 8, cv.CV_32S)
+    hand_mass_center_coord = (int(centroids[1, 0]), int(centroids[1, 1]))
+    hand_circle_size = int(min(stats[1, 2], stats[1, 3])*0.4)
+    extremities = np.zeros(component_overlay_image.shape, dtype=np.uint8)
+    extremities = extremities.astype(np.uint8)
+
+    cv.circle(extremities, hand_mass_center_coord, hand_circle_size, 255, -1)
+    extremities = component_overlay_image - extremities
+    extremities[extremities < 255] = 0
+    _, extremity_labels, stats, centroids = cv.connectedComponentsWithStats(extremities, 8, cv.CV_32S)
+    points = np.zeros_like(extremities)
+    point_list: [Point] = []
+    for i, (centroid, stat) in enumerate(zip(centroids, stats)):
+        if i == 0:
+            continue
+        if stat[4] > min_size:
+            center_of_mass_angle = point_to_point_angle(hand_mass_center_coord, (centroid[0], centroid[1]))
+            if center_of_mass_angle is None:
+                continue
+            center_of_mass_dist = euclidean_dist(hand_mass_center_coord, (centroid[0], centroid[1]))
+            p = Point((int(centroid[0]), int(centroid[1])), center_of_mass_angle, center_of_mass_dist)
+            point_list.append(p)
+            cv.circle(points, p.coord, 2, 255)
+            cv.line(points, hand_mass_center_coord, p.coord, 255)
+    if len(point_list) < 3:
+        return hand
+
+    cv.circle(points, hand_mass_center_coord, 5, 255)
+    cv.imshow("kek",points)
+    wrist_assumption_point: Point = largest_angle(point_list, points)
+    if wrist_assumption_point is not None:
+        point_list.remove(wrist_assumption_point)
     else:
-        largest_countour = None
-    if largest_countour is not None and len(largest_countour) > 4:
-        largest_countour_moment = cv.moments(largest_countour)
-        bounding_rect = cv.fitEllipse(largest_countour)
+        return hand
+    thumb_assumption_point = max(point_list, key=lambda p: p.center_of_mass_dist, default=None)
+    cv.circle(points, thumb_assumption_point.coord, 50, 255)
+    hand = Hand(hand_mass_center_coord)
+    if wrist_assumption_point is not None and 125 > wrist_assumption_point.center_of_mass_angle > -40:
+        text_coord = wrist_assumption_point.coord[0], wrist_assumption_point.coord[1]+20
+        cv.putText(points, str("wrist"), text_coord, cv.FONT_HERSHEY_SIMPLEX, 0.5, 255, 1, cv.LINE_AA)
+        hand.angle = wrist_assumption_point.center_of_mass_angle
+        text_coord = thumb_assumption_point.coord[0], thumb_assumption_point.coord[1] + 20
+        longest_extremity_relative_to_hand_com = world_to_hand_orientation(thumb_assumption_point, wrist_assumption_point)
+        if abs(longest_extremity_relative_to_hand_com) > 135:
+            if 2 <= len(point_list) <= 3:
+                fingers_only = [Extremity(f, True) for f in point_list if abs(world_to_hand_orientation(f, wrist_assumption_point)) > 135]
+                hand.fingers = fingers_only
+                fingers_removed = [f for f in point_list if 90 <= world_to_hand_orientation(f, wrist_assumption_point) <= 135]
+                if fingers_removed:
+                    thumb = fingers_removed[0]
+                    if 135 >= abs(world_to_hand_orientation(thumb, wrist_assumption_point)) >= 75:
+                        hand.thumb = Extremity(thumb, True)
+                        hand.wrist = Extremity(wrist_assumption_point, True)
+        elif 135 >= abs(longest_extremity_relative_to_hand_com) > 75:
+            # Assume thumb
+            hand.thumb = Extremity(thumb_assumption_point, True)
+            hand.wrist = Extremity(wrist_assumption_point, True)
     else:
-        largest_countour_moment = None
-        bounding_rect = None
-    if bounding_rect is not None:
-        (xc, yc), (d1, d2), angle = bounding_rect
-        major = max(d1, d2) / 2
-        if angle > 90:
-            angle = angle - 90
-        else:
-            angle = angle + 90
-        major_lower_coord = xc + math.cos(math.radians(angle + 180)) * major, yc + math.sin(math.radians(angle + 180)) * major
-        major_upper_coord = xc + math.cos(math.radians(angle)) * major, yc + math.sin(math.radians(angle)) * major
-
-        if bounding_rect is not None and largest_countour_moment is not None:
-            (xc2, yc2), (d12, d22), angle2 = bounding_rect
-            minor = min(d12, d22) / 2
-            if angle > 90:
-                angle2 = angle2 - 180
-            else:
-                angle2 = angle2 + 180
-            minor_upper_coord = xc2 + math.cos(math.radians(angle2)) * minor, yc2 + math.sin(math.radians(angle2)) * minor
-            minor_lower_coord = xc2 + math.cos(math.radians(angle2 + 180)) * minor, yc2 + math.sin(math.radians(angle2 + 180)) * minor
-
-            diff_major = major_upper_coord[0] - major_lower_coord[0], major_upper_coord[1] - major_lower_coord[1]
-            diff_minor = minor_upper_coord[0] - minor_lower_coord[0], minor_upper_coord[1] - minor_lower_coord[1]
-
-            euq_major = cv.sqrt(diff_major[0]**2 + diff_major[1]**2)
-            euq_minor = cv.sqrt(diff_minor[0]**2 + diff_minor[1]**2)
-
-            major_axis_len = (euq_major[0]/2, euq_minor[0]/2)
-            hand_mass_center_coord = int(largest_countour_moment["m10"] / largest_countour_moment["m00"]), int(largest_countour_moment["m01"] / largest_countour_moment["m00"])
-
-            extremities = np.zeros(component_overlay_image.shape,dtype=np.uint8)
-            extremities = extremities.astype(np.uint8)
-            cv.circle(extremities, hand_mass_center_coord, int(major_axis_len[0]*0.75), 255, -1)
-            extremities = component_overlay_image - extremities
-            extremities[extremities < 255] = 0
-            _, extremity_labels, stats, centroids = cv.connectedComponentsWithStats(extremities, 8, cv.CV_32S)
-            points = np.zeros_like(extremities)
-            point_list: [Point] = []
-            for i, (centroid, stat) in enumerate(zip(centroids, stats)):
-                if i == 0:
-                    continue
-                if stat[4] > min_size:
-                    center_of_mass_angle = point_to_point_angle(hand_mass_center_coord, (centroid[0], centroid[1]))
-                    if center_of_mass_angle is None:
-                        continue
-                    center_of_mass_dist = euclidean_dist(hand_mass_center_coord, (centroid[0], centroid[1]))
-                    p = Point((int(centroid[0]), int(centroid[1])), center_of_mass_angle, center_of_mass_dist)
-                    point_list.append(p)
-                    cv.circle(points, p.coord, 2, 255)
-                    cv.line(points, hand_mass_center_coord, p.coord, 255)
-            if len(point_list) < 3:
-                return hand
-            cv.circle(points, hand_mass_center_coord, 5, 255)
-            wrist_assumption_point: Point = largest_angle(point_list, points)
-            if wrist_assumption_point is not None:
-                point_list.remove(wrist_assumption_point)
-            else:
-                return hand
-            thumb_assumption_point = max(point_list, key=lambda p: p.center_of_mass_dist, default=None)
-            cv.circle(points, thumb_assumption_point.coord, 50, 255)
-            hand = Hand(hand_mass_center_coord)
-            if wrist_assumption_point is not None and 125 > wrist_assumption_point.center_of_mass_angle > -40:
-                text_coord = wrist_assumption_point.coord[0], wrist_assumption_point.coord[1]+20
-                cv.putText(points, str("wrist"), text_coord, cv.FONT_HERSHEY_SIMPLEX, 0.5, 255, 1, cv.LINE_AA)
-                hand.angle = wrist_assumption_point.center_of_mass_angle
-                text_coord = thumb_assumption_point.coord[0], thumb_assumption_point.coord[1] + 20
-                longest_extremity_relative_to_hand_com = world_to_hand_orientation(thumb_assumption_point, wrist_assumption_point)
-                if abs(longest_extremity_relative_to_hand_com) > 135:
-                    if 2 <= len(point_list) <= 3:
-                        fingers_only = [Extremity(f, True) for f in point_list if abs(world_to_hand_orientation(f, wrist_assumption_point)) > 135]
-                        hand.fingers = fingers_only
-                        fingers_removed = [f for f in point_list if 90 <= world_to_hand_orientation(f, wrist_assumption_point) <= 135]
-                        if fingers_removed:
-                            thumb = fingers_removed[0]
-                            if 135 >= abs(world_to_hand_orientation(thumb, wrist_assumption_point)) >= 75:
-                                hand.thumb = Extremity(thumb, True)
-                                hand.wrist = Extremity(wrist_assumption_point, True)
-                elif 135 >= abs(longest_extremity_relative_to_hand_com) > 75:
-                    # Assume thumb
-                    hand.thumb = Extremity(thumb_assumption_point, True)
-                    hand.wrist = Extremity(wrist_assumption_point, True)
-            else:
-                return hand
+        return hand
     return hand
 
 
@@ -121,7 +87,7 @@ def interpolate(origin, destination, norm_percentage=1.0):
 
 def point_to_point_angle(origin, destination):
     if (any(origin) and any(destination)) and destination[0]-origin[0] != 0:
-        return int(math.degrees(math.atan2((destination[1] - origin[1]),(destination[0] - origin[0]))))
+        return int(math.degrees(math.atan2((destination[1] - origin[1]), (destination[0] - origin[0]))))
     return None
 
 

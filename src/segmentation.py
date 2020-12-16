@@ -17,7 +17,7 @@ def find_roi(image, frame_name, size):
         labels[labels == index_largest_area] = 255
         return make_roi_image(labels, stats[index_largest_area])
     else:
-        return np.zeros([1,1], dtype=np.uint8)
+        return np.zeros([1, 1], dtype=np.uint8)
 
 
 def make_roi_image(image, pos):
