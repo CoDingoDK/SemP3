@@ -1,16 +1,19 @@
 import vlc
 import os
-from hand import LEFT,RIGHT,UP,DOWN,PLAY_PAUSE
+from hand import LEFT, RIGHT, UP, DOWN, PLAY_PAUSE
 
-class VLC_controller:
+
+class VLC_Controller:
     def __init__(self):
-        self.media_player:vlc.MediaPlayer = vlc.MediaPlayer()
+        self.media_player: vlc.MediaPlayer = vlc.MediaPlayer()
         self.med = []
         self.volume_cont = 50
         self.index = 0
-        self.directory = r"ressources\medias"
-        self.path = "ressources\\medias\\"
+        self.directory = r"res\medias"
+        self.path = "res\\medias\\"
         self.inpts = None
+        self.load_media()
+        self.media_player.play()
 
     def perform_action(self, sign):
         if sign == LEFT:
@@ -46,11 +49,11 @@ class VLC_controller:
         exit()
 
     def volume_up(self):
-        self.volume_cont += 25
+        self.volume_cont += 20
         self.media_player.audio_set_volume(self.volume_cont)
 
     def volume_down(self):
-        self.volume_cont -= 25
+        self.volume_cont -= 20
         self.media_player.audio_set_volume(self.volume_cont)
 
     def channel_back(self):
@@ -72,7 +75,3 @@ class VLC_controller:
             self.index = 0
             self.media_player.set_media(vlc.Media(self.path + self.med[self.index]))
             self.media_player.play()
-
-    def vlc(self):
-        self.load_media()
-        self.media_player.play()

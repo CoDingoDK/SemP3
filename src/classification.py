@@ -1,15 +1,15 @@
-import time
 from collections import deque
-from hand import LEFT,RIGHT,UP,DOWN,PLAY_PAUSE
+import time
 
 hands_maxlen = 10
 hands = deque(maxlen=hands_maxlen)
 time_since_last_action = time.time()
 last_sign = None
 
+
 # hands are appended to a queue with a maximum length of 10, this means it takes at most 10 frames
 # before the algorithm is primed for an appropriate response, but also makes it easier to ensure that the sign is valid.
-def classification(hand):
+def classify_hand_over_time(hand):
     global hands, hands_maxlen, time_since_last_action, last_sign
     if hand is not None:
         hand.calc_sign()
@@ -55,4 +55,3 @@ def estimate_sign_consistency(list):
         return unique_signs[index_most_reccuring]
     else:
         return None
-

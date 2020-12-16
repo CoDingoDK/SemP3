@@ -1,7 +1,6 @@
-from vlc_controllenator import VLC_controller as vc
-import threading
+from vlc_impl import VLC_Controller
 import CVHandler as cvh
+
 if __name__ == "__main__":
-        player = vc()
-        player.vlc()
-        cvh.live_feed_capture(player)
+    player = VLC_Controller()
+    cvh.live_feed_capture(player)

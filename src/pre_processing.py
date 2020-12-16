@@ -18,6 +18,7 @@ def hsv_threshhold(image, frame_name):
     frame_masked = cv.dilate(frame_masked, struct)
     return cv.bitwise_and(image, image, mask=frame_masked)
 
+
 def roi_hsv_thresh(image, frame_name, pos):
     # hue_low, hue_up, sat_low, sat_up, val_low, val_up = 40, 105, 40, 255, 0, 255
     x, y, w, h, _ = pos

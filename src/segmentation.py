@@ -1,8 +1,8 @@
 import cv2 as cv
 import numpy as np
 
-def segmentation(image, frame_name, size):
-    #Find ROI
+
+def find_roi(image, frame_name, size):
     res = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
     _, labels, stats, _ = cv.connectedComponentsWithStats(res, 8, cv.CV_32S)
     largest_area = 0
@@ -12,9 +12,21 @@ def segmentation(image, frame_name, size):
             largest_area = row[4]
             index_largest_area = i
     labels = labels.astype(np.uint8)
-    if largest_area >= size:
+    if largest_area >= size:  # Ignore ROI if the largest ROI is smaller than some minimum size.
         labels[labels != index_largest_area] = 0
         labels[labels == index_largest_area] = 255
-        return labels, stats[index_largest_area]
+        return make_roi_image(labels, stats[index_largest_area])
     else:
-        return np.zeros(labels.shape,dtype=np.uint8), stats[0]
+        return np.zeros([1,1], dtype=np.uint8)
+
+
+def make_roi_image(image, pos):
+    x, y, w, h, _ = pos
+    if 0 <= x <= image.shape[0] and 0 <= y <= image.shape[1]:
+        x_boundary, y_boundary = int(w*0.05), int(h*0.05)
+        if 0 <= x - x_boundary <= x + x_boundary <= image.shape[0] and 0 <= y - y_boundary <= y + y_boundary <= image.shape[1]:
+            return image[y - y_boundary: y + h + y_boundary, x - x_boundary: x + w + x_boundary]
+        else:
+            return image[y:y+h, x:x+w]
+    else:
+        return None
