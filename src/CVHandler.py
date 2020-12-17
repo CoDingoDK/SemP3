@@ -34,8 +34,8 @@ def live_feed_capture(mediaplayer: VLC_Controller):
         hand = None
         frame_masked = ppr.hsv_threshhold(frame, frame_name)
         hand_roi, hand_blob = seg.find_roi(frame_masked, frame_name, 50)
-        if hand_roi is not None:
-            hand = rpr.classify_hand(hand_roi, frame_name, 50, hand, hand_blob)
+        if hand_roi is not None and hand_blob is not None:
+            hand = rpr.find_hand_representation(hand_roi, frame_name, 50, hand, hand_blob)
             im_size = 700
             if hand_roi.shape[0] <= im_size and hand_roi.shape[1] <= im_size:
                 image = np.zeros([im_size, im_size], dtype=np.uint8)
