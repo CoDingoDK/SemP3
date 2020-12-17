@@ -4,27 +4,17 @@ import cv2 as cv
 import math
 
 
-def classify_hand(image, frame_name, min_size, hand):
-    res = cv.flip(image, 1)
-    ret, thresh = cv.threshold(res, 0, 255, cv.THRESH_BINARY)
-    num_labels, component_image = cv.connectedComponents(thresh)
+def classify_hand(image, frame_name, min_size, hand, hand_blob):
+    num_labels, labels, stats, centroids = hand_blob
     if num_labels <= 1:
         return hand
-    if np.max(component_image) > 0:
-        label_hue = np.uint8(255 * component_image / np.max(component_image))
-    else:
-        label_hue = np.uint8(255 * component_image / np.max(1))
-    blank_ch = 255 * np.ones_like(label_hue)
-    component_overlay_image = blank_ch
-    component_overlay_image[label_hue == 0] = 0
-    _, labels, stats, centroids = cv.connectedComponentsWithStats(thresh, 8, cv.CV_32S)
     hand_mass_center_coord = (int(centroids[1, 0]), int(centroids[1, 1]))
     hand_circle_size = int(min(stats[1, 2], stats[1, 3])*0.4)
-    extremities = np.zeros(component_overlay_image.shape, dtype=np.uint8)
+    extremities = np.zeros(image.shape, dtype=np.uint8)
     extremities = extremities.astype(np.uint8)
 
     cv.circle(extremities, hand_mass_center_coord, hand_circle_size, 255, -1)
-    extremities = component_overlay_image - extremities
+    extremities = image - extremities
     extremities[extremities < 255] = 0
     _, extremity_labels, stats, centroids = cv.connectedComponentsWithStats(extremities, 8, cv.CV_32S)
     points = np.zeros_like(extremities)

@@ -4,7 +4,9 @@ import numpy as np
 
 def find_roi(image, frame_name, size):
     res = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
-    _, labels, stats, _ = cv.connectedComponentsWithStats(res, 8, cv.CV_32S)
+    res = cv.flip(res, 1)
+
+    num_labels, labels, stats, centroids = cv.connectedComponentsWithStats(res, 8, cv.CV_32S)
     largest_area = 0
     index_largest_area = 0
     for i, row in enumerate(stats):
@@ -12,12 +14,13 @@ def find_roi(image, frame_name, size):
             largest_area = row[4]
             index_largest_area = i
     labels = labels.astype(np.uint8)
-    if largest_area >= size:  # Ignore ROI if the largest ROI is smaller than some minimum size.
+    roi_object = num_labels, labels, stats, centroids
+    if largest_area >= size and num_labels > 1:  # Ignore ROI if the largest ROI is smaller than some minimum size.
         labels[labels != index_largest_area] = 0
         labels[labels == index_largest_area] = 255
-        return make_roi_image(labels, stats[index_largest_area])
+        return make_roi_image(labels, stats[index_largest_area]), roi_object
     else:
-        return np.zeros([1, 1], dtype=np.uint8)
+        return np.zeros([1, 1], dtype=np.uint8), roi_object
 
 
 def make_roi_image(image, pos):
