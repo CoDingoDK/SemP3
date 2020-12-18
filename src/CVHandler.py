@@ -16,8 +16,8 @@ def live_feed_capture(mediaplayer: VLC_Controller):
     cv.imshow(frame_name, frame)
 
     # Pre-processing Trackers
-    cv.createTrackbar("hue lower", frame_name, 23, 360, lambda x: x)
-    cv.createTrackbar("hue upper", frame_name, 102, 360, lambda x: x)
+    cv.createTrackbar("hue lower", frame_name, 23, 179, lambda x: x)
+    cv.createTrackbar("hue upper", frame_name, 102, 179, lambda x: x)
 
     cv.createTrackbar("sat lower", frame_name, 18, 255, lambda x: x)
     cv.createTrackbar("sat upper", frame_name, 255, 255, lambda x: x)
