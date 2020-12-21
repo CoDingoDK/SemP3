@@ -13,10 +13,10 @@ def classify_hand_over_time(hand):
     global hands, hands_maxlen, time_since_last_action, last_sign
     if hand is not None:
         hand.calc_sign()
-    hands.append(hand)
+    hands.appendleft(hand)
     if len(hands) < hands_maxlen:
         return None
-    latest_hand = hands.popleft()
+    latest_hand = hands.pop()
     if latest_hand is None or latest_hand.get_sign() is None:
         # If no hand or sign is found, no action can be performed this frame
         return None

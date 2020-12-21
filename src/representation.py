@@ -8,14 +8,15 @@ def find_hand_representation(image, frame_name, min_size, hand, hand_blob):
     hand_stat, hand_centroid = hand_blob
     hand_mass_center_coord = int(hand_centroid[0]), int(hand_centroid[1])
     hand_circle_size = int(min((hand_stat[2], hand_stat[3]))*0.4)
-    cv.imshow("image", image)
+    cv.imshow("1", image)
     extremities = np.zeros(image.shape, dtype=np.uint8)
     extremities = extremities.astype(np.uint8)
 
     cv.circle(extremities, hand_mass_center_coord, hand_circle_size, 255, -1)
+    cv.imshow("2", extremities)
     extremities = image - extremities
-    cv.imshow("extremities", extremities)
     extremities[extremities < 255] = 0
+    cv.imshow("3", extremities)
     _, extremity_labels, stats, centroids = cv.connectedComponentsWithStats(extremities, 8, cv.CV_32S)
     points = np.zeros_like(extremities)
     point_list: [Point] = []

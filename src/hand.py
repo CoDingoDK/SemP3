@@ -16,7 +16,7 @@ class Hand:
         self.fingers: [Extremity] = []
         self.thumb: Extremity = None
         self.wrist: Extremity = None
-        self.sign: Extremity = None
+        self.sign = None
 
     def get_sign(self):
         return self.sign
@@ -45,7 +45,7 @@ class Hand:
         return False
 
     def __repr__(self):
-        string = ""
+        string = "None"
         if self.sign == 1:
             string = "LEFT"
         elif self.sign == 2:
@@ -56,8 +56,6 @@ class Hand:
             string = "DOWN"
         elif self.sign == 5:
             string = "PLAY"
-        if self.thumb is not None:
-            string += str(int(self.thumb.angle_from_hand_com))
         return string
 
 class Extremity:

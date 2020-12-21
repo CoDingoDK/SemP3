@@ -32,10 +32,13 @@ def live_feed_capture(mediaplayer: VLC_Controller):
     while cv.getWindowProperty(frame_name, cv.WND_PROP_VISIBLE) != 0:
         ret, frame = capture.read()
         hand = None
+        image = None
         frame_masked = ppr.hsv_threshhold(frame, frame_name)
+
         hand_roi, hand_blob = seg.find_roi(frame_masked, frame_name, 50)
         if hand_roi is not None and hand_blob is not None:
             hand = rpr.find_hand_representation(hand_roi, frame_name, 50, hand, hand_blob)
+
             im_size = 700
             if hand_roi.shape[0] <= im_size and hand_roi.shape[1] <= im_size:
                 image = np.zeros([im_size, im_size], dtype=np.uint8)
@@ -49,7 +52,7 @@ def live_feed_capture(mediaplayer: VLC_Controller):
             print(f"FPS: {fps} || Response time: {int((1/fps)*1000)} ms")
             counter = 0
             start_time = time.time()
-        if hand_roi is not None:
+        if hand_roi is not None and image is not None:
             cv.imshow(frame_name, image)
     capture.release()
     cv.destroyAllWindows()

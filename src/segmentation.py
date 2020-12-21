@@ -3,8 +3,7 @@ import numpy as np
 
 
 def find_roi(image, frame_name, size):
-    res = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
-    res = cv.flip(res, 1)
+    res = cv.flip(image, 1)
     num_labels, labels, stats, centroids = cv.connectedComponentsWithStats(res, 8, cv.CV_32S)
     largest_area = 0
     index_largest_area = 0
@@ -18,13 +17,13 @@ def find_roi(image, frame_name, size):
         roi_object = stats[index_largest_area], centroids[index_largest_area]
         labels[labels != index_largest_area] = 0
         labels[labels == index_largest_area] = 255
-        return make_roi_image(labels, stats[index_largest_area],roi_object)
+        return make_roi_image(labels, roi_object)
     else:
         return np.zeros([1, 1], dtype=np.uint8), None
 
 
-def make_roi_image(image, pos, roi_object):
-    x, y, w, h, _ = pos
+def make_roi_image(image, roi_object):
+    x, y, w, h, _ = roi_object[0]
     if 0 <= x <= image.shape[0] and 0 <= y <= image.shape[1]:
         x_boundary, y_boundary = int(w*0.05), int(h*0.05)
         if 0 <= x - x_boundary <= x + x_boundary <= image.shape[0] and 0 <= y - y_boundary <= y + y_boundary <= image.shape[1]:
