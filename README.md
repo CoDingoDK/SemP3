@@ -1,1 +1,1 @@
-SemP3
+3. Semester Medialogi projekt prototype
